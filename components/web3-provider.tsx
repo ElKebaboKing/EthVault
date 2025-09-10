@@ -12,10 +12,10 @@ import governanceAbi from "@/lib/abis/governance.json"
 import stakingDashboardAbi from "@/lib/abis/stakingDashboard.json"
 
 // Contract addresses
-const DETH_ADDRESS = "0x520d7dAB4A5bCE6ceA323470dbffCea14b78253a"
-const SETH_ADDRESS = "0x16b0cD88e546a90DbE380A63EbfcB487A9A05D8e"
-const GOVERNANCE_ADDRESS = "0xD396FE92075716598FAC875D12E708622339FA3e"
-const STAKING_DASHBOARD_ADDRESS = "0xd33e9676463597AfFF5bB829796836631F4e2f1f"
+const DETH_ADDRESS = "0x94Ac4EaE6197B9CD1271331BF7406d039A1a1ce8"
+const SETH_ADDRESS = "0xB4Dc675900067F4840eE2dcF13EAA7458F8E8a6b"
+const GOVERNANCE_ADDRESS = "0x373a72678D748cE97c5BBF68dD7f3e36352b3E7f"
+const STAKING_DASHBOARD_ADDRESS = "0x4a0f213F96EF81714304a9Ae347bdfcfB3607654"
 
 // Holesky testnet configuration
 const HOLESKY_CHAIN_ID = 17000
@@ -35,6 +35,9 @@ type Web3ContextType = {
   chainId: number | null
   refreshBalances: () => Promise<void>
   networkName: string
+  sETHBalance: string | ""
+  dETHBalance: string | ""
+  ethBalance: string | ""
 }
 
 const Web3Context = createContext<Web3ContextType>({
@@ -51,6 +54,9 @@ const Web3Context = createContext<Web3ContextType>({
   chainId: null,
   refreshBalances: async () => {},
   networkName: "",
+  sETHBalance: "",
+  dETHBalance: "",
+  ethBalance: ""
 })
 
 export const useWeb3 = () => useContext(Web3Context)
@@ -67,6 +73,9 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const [chainId, setChainId] = useState<number | null>(null)
   const [networkName, setNetworkName] = useState("")
   const [hasShownConnectToast, setHasShownConnectToast] = useState(false)
+  const [sETHBalance, setSETHBalance] = useState<string | "">("")
+  const [dETHBalance, setDETHBalance] = useState<string | "">("")
+  const [ethBalance, setEthBalance] = useState<string | "">("")
 
   const { toast } = useToast()
 
@@ -205,12 +214,14 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Get ETH balance directly from RPC
         const directBalance = await getEthBalanceDirectly(userAddress)
+        setEthBalance(directBalance)
         console.log("Set ETH balance to:", directBalance)
 
         // Get dETH and sETH balances if contracts are available
         try {
           const dETH = new ethers.Contract(DETH_ADDRESS, dETHAbi, directProvider)
           const dETHBal = await dETH.balanceOf(userAddress)
+          setDETHBalance(ethers.formatEther(dETHBal))
           console.log("dETH balance:", ethers.formatEther(dETHBal))
         } catch (error) {
           console.error("Error getting dETH balance:", error)
@@ -219,6 +230,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const sETH = new ethers.Contract(SETH_ADDRESS, sETHAbi, directProvider)
           const sETHBal = await sETH.balanceOf(userAddress)
+          setSETHBalance(ethers.formatEther(sETHBal))
           console.log("sETH balance:", ethers.formatEther(sETHBal))
         } catch (error) {
           console.error("Error getting sETH balance:", error)
@@ -407,6 +419,9 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
         chainId,
         refreshBalances,
         networkName,
+        sETHBalance,
+        dETHBalance,
+        ethBalance
       }}
     >
       {children}
